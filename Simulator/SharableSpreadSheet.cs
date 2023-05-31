@@ -5,8 +5,8 @@
     {
         private readonly ReaderWriterLockSlim lockObject = new ReaderWriterLockSlim();
         DataTable dataTable;
-        int nR;
-        int nC;
+        public int nR;
+        public int nC;
 
         public SharableSpreadSheet(int nRows, int nCols, int nUsers = -1)
         {
@@ -36,7 +36,21 @@
             lockObject.EnterReadLock();
             try
             {
-                return dataTable.Rows[row][col]?.ToString();
+                return (string)dataTable.Rows[row][col];
+            }
+            finally
+            {
+                lockObject.ExitReadLock();
+            }
+        }
+
+        public void SetCell(int row, int col, String str)
+        {
+            // Return the string at [row, col]
+            lockObject.EnterReadLock();
+            try
+            {
+                dataTable.Rows[row][col] = str;
             }
             finally
             {
@@ -53,7 +67,7 @@
                 {
                     for (int j = 0; j < dataTable.Columns.Count; j++)
                     {
-                        if (dataTable.Rows[i][j]?.ToString().Equals(str) == true)
+                        if (dataTable.Rows[i][j].Equals(str) == true)
                         {
                             row = i;
                             col = j;
@@ -114,7 +128,7 @@
                 int col = -1;
                 for (int i = 0; i < dataTable.Columns.Count; i++)
                 {
-                    if (dataTable.Rows[row][i]?.ToString().Equals(str) == true)
+                    if (dataTable.Rows[row][i].Equals(str) == true)
                     {
                         col = i;
                         break;
@@ -136,7 +150,7 @@
                 int row = -1;
                 for (int i = 0; i < dataTable.Rows.Count; i++)
                 {
-                    if (dataTable.Rows[i][col]?.ToString().Equals(str) == true)
+                    if (dataTable.Rows[i][col].Equals(str) == true)
                     {
                         row = i;
                         break;
@@ -193,7 +207,19 @@
             try
             {
                 DataColumn newCol = new DataColumn();
-                dataTable.Columns.InsertAt(newCol, col1 + 1);
+                dataTable.Columns.Add(newCol);
+
+                // Reorder the columns
+                for (int i = dataTable.Columns.Count - 1; i > col1 + 1; i--)
+                {
+                    for (int j = 0; j < dataTable.Rows.Count; j++)
+                    {
+                        object tmp = dataTable.Rows[j][i];
+                        dataTable.Rows[j][i] = dataTable.Rows[j][i - 1];
+                        dataTable.Rows[j][i - 1] = tmp;
+                    }
+                }
+                
                 nC++;
             }
             finally
@@ -217,7 +243,7 @@
                     for (int j = 0; j < dataTable.Columns.Count; j++)
                     {
                         // Perform the search based on case sensitivity flag
-                        string cellValue = dataTable.Rows[i][j].ToString();
+                        string cellValue = (string)dataTable.Rows[i][j];
                         bool isMatch;
                         if (caseSensitive)
                             isMatch = cellValue?.Contains(str) == true;
@@ -274,7 +300,7 @@
                         DataRow dataRow = dataTable.Rows[row];
                         for (int col = 0; col < dataTable.Columns.Count; col++)
                         {
-                            string cellValue = dataRow[col].ToString();
+                            string cellValue = (string)dataRow[col];
                             writer.Write(cellValue);
                             if (col < dataTable.Columns.Count - 1)
                             {
