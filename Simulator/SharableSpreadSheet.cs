@@ -31,11 +31,11 @@
         }
 
         public string GetCell(int row, int col)
-        {
-            // Return the string at [row, col]
+        { 
             lockObject.EnterReadLock();
             try
             {
+                // Return the string at [row, col]
                 return (string)dataTable.Rows[row][col];
             }
             finally

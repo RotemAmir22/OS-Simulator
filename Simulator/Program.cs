@@ -59,8 +59,8 @@ public class Program
                 case 3:
                     string str = ((char)key.Next(65, 122)).ToString();
                     sencase = key.Next(2) == 1;
-                    spreadSheet.FindAll(str, sencase);
-                    Console.WriteLine("FindAll() -> String: ")
+                    Tuple<int, int>[] result = spreadSheet.FindAll(str, sencase);
+                    Console.WriteLine("FindAll() -> String: " + str + ", Case sensitive: " + sencase )
                     break;
                 case 4:
                     int num = key.Next(0, spreadSheet.nC);
