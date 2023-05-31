@@ -60,15 +60,17 @@ public class Program
                     string str = ((char)key.Next(65, 122)).ToString();
                     sencase = key.Next(2) == 1;
                     Tuple<int, int>[] result = spreadSheet.FindAll(str, sencase);
-                    Console.WriteLine("FindAll() -> String: " + str + ", Case sensitive: " + sencase )
+                    Console.WriteLine("FindAll() -> String: " + str + ", Case sensitive: " + sencase + "\n\tFound points: " + result.ToString());
                     break;
                 case 4:
                     int num = key.Next(0, spreadSheet.nC);
                     spreadSheet.AddCol(num);
+                    Console.WriteLine("AddCol() -> Col: " + num);
                     break;
                 case 5:
                     int num_ = key.Next(0, spreadSheet.nR);
-                    spreadSheet.AddCol(num_);
+                    spreadSheet.AddRow(num_);
+                    Console.WriteLine("AddRow() -> Row: " + num_);
                     break;
                 case 6:
                     int startC = key.Next(0, spreadSheet.nC);
@@ -76,44 +78,53 @@ public class Program
                     int startR = key.Next(0, spreadSheet.nR);
                     int endR = key.Next(startR, spreadSheet.nR);
                     string toSearch = ((char)key.Next(65, 122)).ToString();
-                    spreadSheet.SearchInRange(startC, endC, startR, endR, toSearch);
+                    Tuple <int, int> searchRes = spreadSheet.SearchInRange(startC, endC, startR, endR, toSearch);
+                    Console.WriteLine("SearchInRange() -> String: " + toSearch + "Range: cols(" + startC + "," + endC + "), rows(" + startR + "," + endR + ")\n\tFound: " + searchRes.ToString());
                     break; 
                 case 7:
                     int stC = key.Next(0, spreadSheet.nC);
                     string toSC = ((char)key.Next(65, 122)).ToString();
-                    spreadSheet.SearchInCol(stC, toSC);
+                    int idx = spreadSheet.SearchInCol(stC, toSC);
+                    Console.WriteLine("SearchInCol() -> String: " + toSC + "Col: " + stC + "\n\tFound: " + idx);
                     break;
                 case 8:
                     int stR = key.Next(0, spreadSheet.nR);
                     string toSR = ((char)key.Next(65, 122)).ToString();
-                    spreadSheet.SearchInRow(stR, toSR);
+                    int indx = spreadSheet.SearchInRow(stR, toSR);
+                    Console.WriteLine("SearchInRow() -> String: " + toSR + "Col: " + stR + "\n\tFound: " + indx);
                     break;
                 case 9:
                     int col1 = key.Next(0, spreadSheet.nC);
                     int col2 = key.Next(0, spreadSheet.nC);
                     spreadSheet.ExchangeCols(col1, col2);
+                    Console.WriteLine("ExchangeCols() -> cols " + col1 + "and " + col2 + " have been switches successfully");
                     break;
                 case 10:
                     int row1 = key.Next(0, spreadSheet.nR);
                     int row2 = key.Next(0, spreadSheet.nR);
                     spreadSheet.ExchangeRows(row1, row2);
+                    Console.WriteLine("ExchangeRows() -> rows " + row1 + "and " + row2 + " have been switches successfully");
                     break;
                 case 11:
                     string findS = ((char)key.Next(65, 122)).ToString();
-                    spreadSheet.SearchString(findS);
+                    Tuple<int, int> location = spreadSheet.SearchString(findS);
+                    Console.WriteLine("SearchString() -> string " + findS + "is found in cell " + location);
                     break;
                 case 12:
                     int col = key.Next(0, spreadSheet.nC);
                     int row = key.Next(0, spreadSheet.nR);
                     string set = ((char)key.Next(65, 122)).ToString();
                     spreadSheet.SetCell(row, col, set);
+                    Console.WriteLine("SetCell() -> cell " + "(" + row + ", " + col + ")" + "value has been changed to: " + set);
                     break;
                 case 13:
                     int indxC = key.Next(0, spreadSheet.nC);
                     int indxR = key.Next(0, spreadSheet.nR);
-                    spreadSheet.GetCell(indxR, indxC);
+                    string value = spreadSheet.GetCell(indxR, indxC);
+                    Console.WriteLine("GetCell() -> cell " + "(" + indxR + ", " + indxC + ")" + "value is: " + value);
                     break;
-                default: break;
+                default: 
+                    break;
             }
             Thread.Sleep(sleep);
         }
