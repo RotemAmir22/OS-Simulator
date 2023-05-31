@@ -26,6 +26,7 @@ public class Program
         for(int i = 0; i < nThreads; i++) 
         {
             Thread thread = new Thread(() => run(spreadSheet, nOper, mssleep));
+            thread.Name = "Thread " + i.ToString(); 
             thread.Start();
         }
 
@@ -35,6 +36,7 @@ public class Program
 
     static void run(SharableSpreadSheet.SharableSpreadSheet spreadSheet, int nOper, int sleep)
     {
+        Console.WriteLine(Thread.CurrentThread.Name + ":");
         Random rand = new Random();
         Random key = new Random();
         bool sencase;
@@ -44,18 +46,21 @@ public class Program
             switch (choice)
             {
                 case 1:
-                    spreadSheet.getSize();
+                    Tuple<int, int> size = spreadSheet.getSize();
+                    Console.WriteLine("getSize() -> " + size.ToString());
                     break;
                 case 2:
                     string old = ((char)key.Next(65, 122)).ToString();
                     string newstr = ((char)key.Next(65, 122)).ToString();
                     sencase = key.Next(2) == 1;
                     spreadSheet.SetAll(old, newstr, sencase);
+                    Console.WriteLine("SetAll() -> Old string: " + old + ", New string: " + newstr + ". Case sensitive: " + sencase);
                     break;
                 case 3:
                     string str = ((char)key.Next(65, 122)).ToString();
                     sencase = key.Next(2) == 1;
                     spreadSheet.FindAll(str, sencase);
+                    Console.WriteLine("FindAll() -> String: ")
                     break;
                 case 4:
                     int num = key.Next(0, spreadSheet.nC);
