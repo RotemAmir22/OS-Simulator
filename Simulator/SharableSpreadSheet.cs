@@ -1,280 +1,282 @@
 ﻿namespace SharableSpreadSheet
 {
-    using System.Windows.Forms;
+    using System.Data;
     class SharableSpreadSheet
     {
-            private readonly ReaderWriterLockSlim lockObject = new ReaderWriterLockSlim();
-            DataGridView dataGrid;
-            int nR;
-            int nC;
-            public SharableSpreadSheet(int nRows, int nCols, int nUsers = -1)
-            {
-                // nUsers used for setConcurrentSearchLimit, -1 mean no limit.
-                // construct a nRows*nCols spreadsheet
-                dataGrid = new DataGridView();
-                nR = nRows;
-                nC = nCols;
-                dataGrid.SetBounds(0, 0, nCols, nRows);
+        private readonly ReaderWriterLockSlim lockObject = new ReaderWriterLockSlim();
+        DataTable dataTable;
+        int nR;
+        int nC;
 
-            }
-            public String getCell(int row, int col)
-            {
-            // return the string at [row,col]
-                lockObject.EnterReadLock();
-                try
-                {
-                    return dataGrid.Rows[row].Cells[col].Value?.ToString();
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
-                }
-            }
-            public void setCell(int row, int col, String str)
-            {
-                // set the string at [row,col]
-                lockObject.EnterWriteLock();
-                try
-                {
-                    dataGrid.Rows[row].Cells[col].Value = str;
-                }
-                finally
-                {
-                    lockObject.ExitWriteLock();
-                }
+        public SharableSpreadSheet(int nRows, int nCols, int nUsers = -1)
+        {
+            // nUsers used for setConcurrentSearchLimit, -1 means no limit.
+            // Construct a nRows*nCols spreadsheet
+            dataTable = new DataTable();
+            nR = nRows;
+            nC = nCols;
 
-            }
-            public Tuple<int, int> searchString(String str)
+            // Add columns to the DataTable
+            for (int col = 0; col < nCols; col++)
             {
-                int row = -1, col = -1;
-                lockObject.EnterReadLock();
-                try
-                {
-                    for (int i = 0; i < dataGrid.Rows.Count; i++)
-                    {
-                        for (int j = 0; j < dataGrid.Columns.Count; j++)
-                        {
-                            if (dataGrid.Rows[i].Cells[j].Value?.ToString().Equals(str) == true)
-                            {
-                                row = i;
-                                col = j;
-                                break;
-                            }
-                        }
-                    }
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
-                }
+                dataTable.Columns.Add(col.ToString(), typeof(string));
+            }
 
-                // return first cell indexes that contain the string (search from first row to the last row)
-                return Tuple.Create(row, col);
+            // Add rows to the DataTable
+            for (int row = 0; row < nRows; row++)
+            {
+                DataRow dataRow = dataTable.NewRow();
+                dataTable.Rows.Add(dataRow);
             }
-            public void exchangeRows(int row1, int row2)
+        }
+
+        public string GetCell(int row, int col)
+        {
+            // Return the string at [row, col]
+            lockObject.EnterReadLock();
+            try
             {
-                lockObject.EnterWriteLock();
-                try
-                {
-                    for (int i = 0; i < dataGrid.Columns.Count; i++)
-                    {
-                        DataGridViewCell tmp = dataGrid.Rows[row1].Cells[i];
-                        dataGrid.Rows[row1].Cells[i].Value = dataGrid.Rows[row2].Cells[i].Value;
-                        dataGrid.Rows[row2].Cells[i].Value = tmp.Value;
-                    }
-                }
-                finally
-                {
-                    lockObject.ExitWriteLock();
-                }
-               }
-            public void exchangeCols(int col1, int col2)
-            {
-                lockObject.EnterWriteLock();
-                try
-                {
-                    for (int i = 0; i < dataGrid.Rows.Count; i++)
-                    {
-                        DataGridViewCell tmp = dataGrid.Rows[i].Cells[col1];
-                        dataGrid.Rows[i].Cells[col1].Value = dataGrid.Rows[i].Cells[col2].Value;
-                        dataGrid.Rows[i].Cells[col2].Value = tmp.Value;
-                    }
-                }
-                finally
-                {
-                    lockObject.ExitWriteLock();
-                }
+                return dataTable.Rows[row][col]?.ToString();
             }
-            public int searchInRow(int row, String str)
+            finally
             {
-                lockObject.EnterReadLock();
-                try
-                {
-                    int col = -1;
-                    for (int i = 0; i < dataGrid.Columns.Count; i++)
-                    {
-                        if (dataGrid.Rows[row].Cells[i].Value?.ToString().Equals(str) == true)
-                        {
-                            col = i;
-                            break;
-                        }
-                    }
-                    return col;
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
-                }
+                lockObject.ExitReadLock();
             }
-            public int searchInCol(int col, String str)
+        }
+        public Tuple<int, int> SearchString(string str)
+        {
+            int row = -1, col = -1;
+            lockObject.EnterReadLock();
+            try
             {
-                lockObject.EnterReadLock();
-                try
+                for (int i = 0; i < dataTable.Rows.Count; i++)
                 {
-                    int row = -1;
-                    for (int i = 0; i < dataGrid.Rows.Count; i++) 
-                    { 
-                        if (dataGrid.Rows[i].Cells[col].Value.Equals(str))
+                    for (int j = 0; j < dataTable.Columns.Count; j++)
+                    {
+                        if (dataTable.Rows[i][j]?.ToString().Equals(str) == true)
                         {
                             row = i;
+                            col = j;
                             break;
                         }
                     }
-                    return row;
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
                 }
             }
-            public Tuple<int, int> searchInRange(int col1, int col2, int row1, int row2, String str)
+            finally
             {
-                lockObject.EnterReadLock();
-                try
+                lockObject.ExitReadLock();
+            }
+
+            // Return the first cell indexes that contain the string (search from the first row to the last row)
+            return Tuple.Create(row, col);
+        }
+
+        public void ExchangeRows(int row1, int row2)
+        {
+            lockObject.EnterWriteLock();
+            try
+            {
+                for (int i = 0; i < dataTable.Columns.Count; i++)
                 {
-                // perform search within spesific range: [row1:row2,col1:col2] 
-                //includes col1,col2,row1,row2
+                    object tmp = dataTable.Rows[row1][i];
+                    dataTable.Rows[row1][i] = dataTable.Rows[row2][i];
+                    dataTable.Rows[row2][i] = tmp;
+                }
+            }
+            finally
+            {
+                lockObject.ExitWriteLock();
+            }
+        }
+
+        public void ExchangeCols(int col1, int col2)
+        {
+            lockObject.EnterWriteLock();
+            try
+            {
+                for (int i = 0; i < dataTable.Rows.Count; i++)
+                {
+                    object tmp = dataTable.Rows[i][col1];
+                    dataTable.Rows[i][col1] = dataTable.Rows[i][col2];
+                    dataTable.Rows[i][col2] = tmp;
+                }
+            }
+            finally
+            {
+                lockObject.ExitWriteLock();
+            }
+        }
+        public int SearchInRow(int row, string str)
+        {
+            lockObject.EnterReadLock();
+            try
+            {
+                int col = -1;
+                for (int i = 0; i < dataTable.Columns.Count; i++)
+                {
+                    if (dataTable.Rows[row][i]?.ToString().Equals(str) == true)
+                    {
+                        col = i;
+                        break;
+                    }
+                }
+                return col;
+            }
+            finally
+            {
+                lockObject.ExitReadLock();
+            }
+        }
+
+        public int SearchInCol(int col, string str)
+        {
+            lockObject.EnterReadLock();
+            try
+            {
+                int row = -1;
+                for (int i = 0; i < dataTable.Rows.Count; i++)
+                {
+                    if (dataTable.Rows[i][col]?.ToString().Equals(str) == true)
+                    {
+                        row = i;
+                        break;
+                    }
+                }
+                return row;
+            }
+            finally
+            {
+                lockObject.ExitReadLock();
+            }
+        }
+
+        public Tuple<int, int> SearchInRange(int col1, int col2, int row1, int row2, string str)
+        {
+            lockObject.EnterReadLock();
+            try
+            {
+                // Perform search within a specific range: [row1:row2, col1:col2]
+                // Includes col1, col2, row1, row2
                 for (int i = col1; i <= col2; i++)
                 {
-                    for(int j = row1; j <= row2; j++)
+                    for (int j = row1; j <= row2; j++)
                     {
-                        if (getCell(j, i).Equals(str))
+                        if (GetCell(j, i).Equals(str))
                             return Tuple.Create(i, j);
                     }
                 }
                 return Tuple.Create(-1, -1);
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
-                }
             }
-            public void addRow(int row1)
+            finally
             {
-                lockObject.EnterReadLock();
-                try
-                {
-                    DataGridViewRow newRow = new DataGridViewRow();
-                    for (int i = 0; i < dataGrid.Columns.Count; i++)
-                        newRow.Cells.Add(new DataGridViewTextBoxCell());
-                    dataGrid.Rows.Insert(row1 + 1, newRow);
-                    nR++;
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
-                }
+                lockObject.ExitReadLock();
             }
-            public void addCol(int col1)
+        }
+        public void AddRow(int row1)
+        {
+            lockObject.EnterWriteLock();
+            try
             {
-                lockObject.EnterReadLock();
-                try
-                {
-                    //add a column after col1
-                    DataGridViewColumn newCol = new DataGridViewColumn();
-                    dataGrid.Columns.Insert(col1 + 1, newCol);
-                    nC++;
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
-                }
+                DataRow newRow = dataTable.NewRow();
+                dataTable.Rows.InsertAt(newRow, row1 + 1);
+                nR++;
             }
-            public Tuple<int, int>[] findAll(String str,bool caseSensitive)
+            finally
             {
-                lockObject.EnterReadLock();
-                try
-                {
-                    List<Tuple<int, int>> matchingCells = new List<Tuple<int, int>>();
+                lockObject.ExitWriteLock();
+            }
+        }
 
-                    // Iterate over each row in the DataGridView
-                    foreach (DataGridViewRow row in dataGrid.Rows)
-                    {
-                        // Iterate over each cell in the row
-                        foreach (DataGridViewCell cell in row.Cells)
-                        {
-                            // Perform the search based on case sensitivity flag
-                            bool isMatch;
-                            if (caseSensitive)
-                                isMatch = cell.Value?.ToString().Contains(str) == true;
-                            else
-                                isMatch = cell.Value?.ToString().IndexOf(str, StringComparison.OrdinalIgnoreCase) >= 0;
-
-                            // If the cell value matches, add the cell coordinates to the list
-                            if (isMatch)
-                            {
-                                int rowIndex = cell.RowIndex;
-                                int columnIndex = cell.ColumnIndex;
-                                matchingCells.Add(new Tuple<int, int>(rowIndex, columnIndex));
-                            }
-                        }
-                    }
-                    return matchingCells.ToArray();
-                }
-                finally
-                {
-                    lockObject.ExitReadLock();
-                }
-            }
-            public void setAll(String oldStr, String newStr ,bool caseSensitive)
+        public void AddCol(int col1)
+        {
+            lockObject.EnterWriteLock();
+            try
             {
-                // replace all oldStr cells with the newStr str according to caseSensitive param
-                lockObject.EnterWriteLock();
-                try
-                {
-                    Tuple<int, int>[] cellsToSet = FindAll(oldStr, caseSensitive);
-                    foreach (Tuple<int, int> cell in cellsToSet)
-                    {
-                        SetCell(cell.Item1, cell.Item2, newStr);
-                    }
-                }
-                finally
-                {
-                    lockObject.ExitWriteLock();
-                }
+                DataColumn newCol = new DataColumn();
+                dataTable.Columns.InsertAt(newCol, col1 + 1);
+                nC++;
             }
-
-            public Tuple<int, int> getSize()
+            finally
             {
-                // return the size of the spreadsheet in nRows, nCols
-                return Tuple.Create(nR, nC);
+                lockObject.ExitWriteLock();
             }
+        }
 
-            public void save(String fileName)
-            {
+
+        public Tuple<int, int>[] FindAll(string str, bool caseSensitive)
+        {
             lockObject.EnterReadLock();
             try
             {
-                using (FileStream fileStream = new FileStream(fileName, FileMode.Create, FileAccess.Write))
-                using (StreamWriter writer = new StreamWriter(fileStream))
+                List<Tuple<int, int>> matchingCells = new List<Tuple<int, int>>();
+
+                // Iterate over each row in the DataTable
+                for (int i = 0; i < dataTable.Rows.Count; i++)
                 {
-                    for (int row = 0; row < nR; row++)
+                    // Iterate over each column in the DataTable
+                    for (int j = 0; j < dataTable.Columns.Count; j++)
                     {
-                        for (int col = 0; col < nC; col++)
+                        // Perform the search based on case sensitivity flag
+                        string cellValue = dataTable.Rows[i][j].ToString();
+                        bool isMatch;
+                        if (caseSensitive)
+                            isMatch = cellValue?.Contains(str) == true;
+                        else
+                            isMatch = cellValue?.IndexOf(str, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                        // If the cell value matches, add the cell coordinates to the list
+                        if (isMatch)
                         {
-                            string cellValue = getCell(row, col);
+                            matchingCells.Add(new Tuple<int, int>(i, j));
+                        }
+                    }
+                }
+                return matchingCells.ToArray();
+            }
+            finally
+            {
+                lockObject.ExitReadLock();
+            }
+        }
+        public void SetAll(string oldStr, string newStr, bool caseSensitive)
+        {
+            lockObject.EnterWriteLock();
+            try
+            {
+                Tuple<int, int>[] cellsToSet = FindAll(oldStr, caseSensitive);
+                foreach (Tuple<int, int> cell in cellsToSet)
+                {
+                    dataTable.Rows[cell.Item1][cell.Item2] = newStr;
+                }
+            }
+            finally
+            {
+                lockObject.ExitWriteLock();
+            }
+        }
+
+
+        public Tuple<int, int> getSize()
+        {
+            // return the size of the spreadsheet in nRows, nCols
+            return Tuple.Create(nR, nC);
+        }
+
+        public void Save(string fileName)
+        {
+            lockObject.EnterReadLock();
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(fileName))
+                {
+                    for (int row = 0; row < dataTable.Rows.Count; row++)
+                    {
+                        DataRow dataRow = dataTable.Rows[row];
+                        for (int col = 0; col < dataTable.Columns.Count; col++)
+                        {
+                            string cellValue = dataRow[col].ToString();
                             writer.Write(cellValue);
-                            if (col < nC - 1)
+                            if (col < dataTable.Columns.Count - 1)
                             {
                                 writer.Write(",");
                             }
@@ -284,40 +286,37 @@
                 }
             }
             finally
-                {
-                    lockObject.ExitReadLock();
-                }
-            }
-    
-            public void load(String fileName)
             {
-                lockObject.EnterWriteLock();
-                try
+                lockObject.ExitReadLock();
+            }
+        }
+
+        public void Load(string fileName)
+        {
+            lockObject.EnterWriteLock();
+            try
+            {
+                dataTable.Clear();
+                using (StreamReader reader = new StreamReader(fileName))
                 {
-                    using (StreamReader reader = new StreamReader(fileName))
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        string line;
-                        int row = 0;
+                        string[] cellValues = line.Split(',');
+                        DataRow dataRow = dataTable.Rows.Add();
 
-                        while ((line = reader.ReadLine()) != null)
+                        for (int col = 0; col < cellValues.Length; col++)
                         {
-                            string[] cellValues = line.Split(',');
-                            int col = 0;
-
-                            foreach (string cellValue in cellValues)
-                            {
-                                setCell(row, col, cellValue.Trim());
-                                col++;
-                            }
-
-                            row++;
+                            dataRow[col] = cellValues[col].Trim();
                         }
                     }
                 }
-                finally
-                {
-                    lockObject.ExitWriteLock();
-                }
+            }
+            finally
+            {
+                lockObject.ExitWriteLock();
             }
         }
+
     }
+}
