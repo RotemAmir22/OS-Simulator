@@ -175,7 +175,7 @@
                 {
                     for (int j = row1; j <= row2; j++)
                     {
-                        if (GetCell(j, i).Equals(str))
+                        if (dataTable.Rows[j][i].Equals(str))
                             return Tuple.Create(i, j);
                     }
                 }
@@ -192,7 +192,11 @@
             try
             {
                 DataRow newRow = dataTable.NewRow();
-                dataTable.Rows.InsertAt(newRow, row1 + 1);
+                dataTable.Rows.InsertAt(newRow, row1);
+                foreach (DataColumn column in dataTable.Columns)
+                {
+                    dataTable.Rows[row1].SetField(column, "_");
+                }
                 nR++;
             }
             finally
@@ -210,7 +214,7 @@
                 dataTable.Columns.Add(newCol);
 
                 // Reorder the columns
-                for (int i = dataTable.Columns.Count - 1; i > col1 + 1; i--)
+                for (int i = dataTable.Columns.Count - 1; i > col1; i--)
                 {
                     for (int j = 0; j < dataTable.Rows.Count; j++)
                     {
@@ -219,7 +223,11 @@
                         dataTable.Rows[j][i - 1] = tmp;
                     }
                 }
-                
+                foreach (DataRow row in dataTable.Rows)
+                {
+                    row.SetField(col1, "_");
+                }
+
                 nC++;
             }
             finally
@@ -243,7 +251,7 @@
                     for (int j = 0; j < dataTable.Columns.Count; j++)
                     {
                         // Perform the search based on case sensitivity flag
-                        string cellValue = (string)dataTable.Rows[i][j];
+                        string cellValue = dataTable.Rows[i][j].ToString();
                         bool isMatch;
                         if (caseSensitive)
                             isMatch = cellValue?.Contains(str) == true;
@@ -266,10 +274,11 @@
         }
         public void SetAll(string oldStr, string newStr, bool caseSensitive)
         {
+            Tuple<int, int>[] cellsToSet = FindAll(oldStr, caseSensitive);
+
             lockObject.EnterWriteLock();
             try
             {
-                Tuple<int, int>[] cellsToSet = FindAll(oldStr, caseSensitive);
                 foreach (Tuple<int, int> cell in cellsToSet)
                 {
                     dataTable.Rows[cell.Item1][cell.Item2] = newStr;
@@ -341,6 +350,18 @@
             finally
             {
                 lockObject.ExitWriteLock();
+            }
+        }
+
+        public void PrintDataTable()
+        {
+            foreach (DataRow row in dataTable.Rows)
+            {
+                foreach (DataColumn col in dataTable.Columns)
+                {
+                    Console.Write(row[col] + "\t");
+                }
+                Console.WriteLine();
             }
         }
 
