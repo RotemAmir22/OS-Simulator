@@ -11,6 +11,7 @@
         public SharableSpreadSheet(int nRows, int nCols, int nUsers = -1)
         {
             // nUsers used for setConcurrentSearchLimit, -1 means no limit.
+            // Program is incharge for nUsers (num of threads)
             // Construct a nRows*nCols spreadsheet
             dataTable = new DataTable();
             nR = nRows;
