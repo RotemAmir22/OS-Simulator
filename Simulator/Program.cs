@@ -13,6 +13,7 @@ public class Program
     }
     static void Simulator(int row, int col, int nThreads, int nOper, int mssleep)
     {
+        if(nThreads <=0) { nThreads = 1; }
         SharableSpreadSheet.SharableSpreadSheet spreadSheet = new SharableSpreadSheet.SharableSpreadSheet(row,col,nThreads);
         Random rand = new Random();
         for (int i = 0; i < row; i++) {
@@ -72,7 +73,7 @@ public class Program
                     Tuple<int, int>[] result = spreadSheet.FindAll(str, sencase);
                     string resultString = string.Join(", ", result.Select(tuple => tuple.ToString()));
 
-                    Console.WriteLine(name + "FindAll() -> String: '" + str + "', Case sensitive: " + sencase + "\n\t  Found points: " + resultString);
+                    Console.WriteLine(name + "FindAll() -> String: " + str + ", Case sensitive: " + sencase + "\n\t  Found points: " + resultString);
                     break;
                 case 4:
                     int num = key.Next(0, spreadSheet.nC);
